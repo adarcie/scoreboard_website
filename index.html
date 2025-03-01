@@ -1,126 +1,97 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Volleyball Stat Sheet</title>
-    <style>
-        :root {
-            --liberos: #FFB6C1;
-            --middles: #98FB98;
-            --right-sides: #87CEEB;
-            --outsides: #DDA0DD;
-            --setters: #FFD700;
-            --team: #F0E68C;
-        }
-
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .players { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
-        .player { padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
-        .stat { display: flex; align-items: center; margin: 5px 0; }
-        button { margin: 0 5px; padding: 2px 8px; cursor: pointer; }
-        h2 { margin-top: 0; }
-        .liberos { background: var(--liberos); }
-        .middles { background: var(--middles); }
-        .right-sides { background: var(--right-sides); }
-        .outsides { background: var(--outsides); }
-        .setters { background: var(--setters); }
-        .team-stats { background: var(--team); padding: 1rem; margin-top: 2rem; }
-        .controls { margin: 20px 0; }
-    </style>
-</head>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Volleyball Stat Sheet</title>
+        <link rel="stylesheet" href="styles.css">
+        <!-- jsPDF and AutoTable for PDF generation -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+        <!-- Defer loading of script.js to ensure DOM is ready -->
+        <script src="script.js" defer></script>
+    </head>
 <body>
-    <div class="controls">
-        <button onclick="saveData()">Save Data</button>
-        <button onclick="resetBoard()">Reset Board</button>
+    <!-- Password Overlay -->
+    <div id="authOverlay">
+        <div>
+            <h2>Enter Password</h2>
+            <input type="password" id="passwordInput" placeholder="Password">
+            <button onclick="checkPassword()">Enter</button>
+            <p id="passwordError" style="color: red; display: none;">Incorrect password!</p>
+        </div>
     </div>
-    
-    <div class="players" id="playersContainer"></div>
-    <div class="team-stats" id="teamStats"></div>
 
-    <script>
-        const dataStream = [];
-        const positions = {
-            liberos: { count: 2, stats: ['Digs', 'Receptions', 'Errors'] },
-            middles: { count: 2, stats: ['Blocks', 'Aces', 'Kills', 'Errors'] },
-            rightSides: { count: 2, stats: ['Kills', 'Blocks', 'Aces', 'Errors'] },
-            outsides: { count: 5, stats: ['Kills', 'Digs', 'Receptions', 'Errors'] },
-            setters: { count: 2, stats: ['Assists', 'Digs', 'Aces', 'Errors'] },
-            team: { stats: ['Total Points', 'Service Errors', 'Rotation Errors'] }
-        };
+    <!-- Reset Confirmation Modal -->
+    <div class="modal" id="confirmationModal">
+        <p>Are you sure you want to reset the sheet?</p>
+        <button onclick="confirmReset(true)">Yes</button>
+        <button onclick="confirmReset(false)">No</button>
+    </div>
 
-        function createStatElement(playerId, statName) {
-            const div = document.createElement('div');
-            div.className = 'stat';
-            div.innerHTML = `
-                <span>${statName}:</span>
-                <button onclick="updateStat('${playerId}', '${statName}', -1)">-</button>
-                <span id="${playerId}-${statName}">0</span>
-                <button onclick="updateStat('${playerId}', '${statName}', 1)">+</button>
-            `;
-            return div;
-        }
+    <!-- Main Content -->
+    <div id="mainContent" style="display: none;">
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab-button active" onclick="showTab('inputView')">Input</button>
+            <button class="tab-button" onclick="showTab('statsView')">Stats View</button>
+        </div>
 
-        function createPlayerSection(position, number) {
-            const section = document.createElement('div');
-            const playerId = `${position}-${number}`;
-            section.className = `player ${position}`;
-            section.innerHTML = `<h2>${position} ${number}</h2>`;
-            positions[position].stats.forEach(stat => {
-                section.appendChild(createStatElement(playerId, stat));
-            });
-            return section;
-        }
+        <!-- Input View -->
+        <div id="inputView" class="tab-content active">
+            <!-- Game Information -->
+            <div class="game-info">
+                <div>
+                    <h2>Game Information</h2>
+                    <div>
+                        <label>Game Number: <input type="text" id="gameNumber"></label><br>
+                        <label>Opponent: <input type="text" id="opponent"></label><br>
+                        <div class="set-control">
+                            <span>Set Number:</span>
+                            <button onclick="updateSetNumber(-1)">-</button>
+                            <span class="set-number" id="setNumber">1</span>
+                            <button onclick="updateSetNumber(1)">+</button>
+                        </div>
+                    </div>
+                </div>
 
-        function initializePlayers() {
-            const container = document.getElementById('playersContainer');
-            Object.entries(positions).forEach(([pos, config]) => {
-                if (pos === 'team') return;
-                for (let i = 1; i <= config.count; i++) {
-                    container.appendChild(createPlayerSection(pos, i));
-                }
-            });
+                <!-- Scoreboard -->
+                <div class="scoreboard">
+                    <div>
+                        <button onclick="updateScore('home', -1)">-</button>
+                        <span class="score" id="homeScore">0</span>
+                        <button onclick="updateScore('home', 1)">+</button>
+                        <div>Home</div>
+                    </div>
+                    <div>vs</div>
+                    <div>
+                        <button onclick="updateScore('away', -1)">-</button>
+                        <span class="score" id="awayScore">0</span>
+                        <button onclick="updateScore('away', 1)">+</button>
+                        <div>Away</div>
+                    </div>
+                </div>
+            </div>
 
-            const teamSection = document.getElementById('teamStats');
-            teamSection.innerHTML = '<h2>Team Stats</h2>';
-            positions.team.stats.forEach(stat => {
-                teamSection.appendChild(createStatElement('team', stat));
-            });
-        }
+            <!-- Controls -->
+            <div class="controls">
+                <button onclick="saveData()">Save Data</button>
+                <button onclick="showResetConfirmation()">Reset Board</button>
+                <button onclick="resetScores()">Reset Scores</button>
+            </div>
 
-        function updateStat(playerId, statName, change) {
-            const element = document.getElementById(`${playerId}-${statName}`);
-            const newValue = Math.max(parseInt(element.textContent) + change, 0);
-            element.textContent = newValue;
-            
-            dataStream.push({
-                timestamp: new Date().toISOString(),
-                player: playerId,
-                stat: statName,
-                change: change,
-                newValue: newValue
-            });
-        }
+            <!-- Players Container (including the Team Stats panel appended dynamically) -->
+            <div class="players" id="playersContainer"></div>
+        </div>
 
-        function saveData() {
-            const dataStr = JSON.stringify(dataStream, null, 2);
-            const blob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `volley-stats-${new Date().toISOString()}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-
-        function resetBoard() {
-            document.querySelectorAll('.stat span:nth-child(3)').forEach(span => {
-                span.textContent = '0';
-            });
-            dataStream.length = 0;
-        }
-
-        window.onload = initializePlayers;
-    </script>
+        <!-- Stats View -->
+        <div id="statsView" class="tab-content">
+            <button onclick="generatePDF()">Save All to PDF</button>
+            <select class="set-selector" id="setSelector" onchange="generateStatsTable()">
+                <option value="all">All Sets</option>
+            </select>
+            <div id="statsTable"></div>
+        </div>
+    </div>
 </body>
 </html>

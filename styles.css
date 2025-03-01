@@ -1,0 +1,231 @@
+:root {
+    --liberos: #FFB6C1;
+    --middles: #98FB98;
+    --right-sides: #98FB98;
+    --outsides: #DDA0DD;
+    --setters: #FFD700;
+    --team: #F0E68C;
+}
+
+#authOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    color: white;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    z-index: 1001;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+}
+
+.game-info {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.scoreboard,
+.set-control {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.score,
+.set-number {
+    font-size: 2rem;
+    font-weight: bold;
+    min-width: 60px;
+    text-align: center;
+}
+
+.players {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+.player {
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+/* Make Team Stats look like a player box */
+.player.team-stats {
+    background: var(--team);
+}
+
+.stat {
+    display: flex;
+    align-items: center;
+    margin: 5px 0;
+    gap: 5px;
+}
+
+.stat span:first-child {
+    min-width: 100px;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+button {
+    margin: 0 2px;
+    padding: 8px 16px;
+    cursor: pointer;
+    flex-shrink: 0;
+    font-size: 1.1rem;
+}
+
+h2 {
+    margin-top: 0;
+    font-size: 1.2rem;
+}
+
+.liberos {
+    background: var(--liberos);
+}
+
+.middles {
+    background: var(--middles);
+}
+
+.right-sides {
+    background: var(--right-sides);
+}
+
+.outsides {
+    background: var(--outsides);
+}
+
+.setters {
+    background: var(--setters);
+}
+
+.controls {
+    margin: 20px 0;
+    display: flex;
+    gap: 10px;
+}
+
+input[type="text"] {
+    padding: 5px;
+    margin: 5px 0;
+    width: 150px;
+}
+
+.tabs {
+    margin-bottom: 20px;
+}
+
+.tab-button {
+    padding: 10px 20px;
+    cursor: pointer;
+    background: #ddd;
+    border: none;
+    border-radius: 4px 4px 0 0;
+}
+
+.tab-button.active {
+    background: #fff;
+    border-bottom: 2px solid #333;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+th,
+td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;
+}
+
+th {
+    background-color: #f2f2f2;
+}
+
+.max-value {
+    background-color: #90EE90 !important;
+}
+
+.set-selector {
+    margin: 10px 0;
+    padding: 5px;
+}
+
+/* Additional styles for PDF button */
+#statsView button {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 20px;
+    margin-bottom: 10px;
+    cursor: pointer;
+}
+
+#statsView button:hover {
+    background-color: #45a049;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .game-info {
+        flex-direction: column;
+    }
+    .players {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    }
+}
+
+@media (max-width: 480px) {
+    .scoreboard,
+    .set-control {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    .stat {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .stat span:first-child {
+        min-width: auto;
+    }
+    .controls {
+        flex-direction: column;
+    }
+}
