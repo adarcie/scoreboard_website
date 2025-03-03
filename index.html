@@ -16,12 +16,14 @@
     <!-- Password Overlay -->
     <div id="authOverlay">
         <div>
-            <h2>Enter Password</h2>
+          <h2>Enter Password</h2>
+          <div class="password-container">
             <input type="password" id="passwordInput" placeholder="Password">
             <button onclick="checkPassword()">Enter</button>
-            <p id="passwordError" style="color: red; display: none;">Incorrect password!</p>
+          </div>
+          <p id="passwordError" style="color: red; display: none;">Incorrect password!</p>
         </div>
-    </div>
+      </div>
 
     <!-- Reset Confirmation Modal -->
     <div class="modal" id="confirmationModal">
@@ -42,48 +44,54 @@
         <div id="inputView" class="tab-content active">
             <!-- Game Information -->
             <div class="game-info">
-                <div>
-                    <h2>Game Information</h2>
-                    <div>
-                        <label>Game Number: <input type="text" id="gameNumber"></label><br>
-                        <label>Opponent: <input type="text" id="opponent"></label><br>
-                        <div class="set-control">
-                            <span>Set Number:</span>
-                            <button onclick="updateSetNumber(-1)">-</button>
-                            <span class="set-number" id="setNumber">1</span>
-                            <button onclick="updateSetNumber(1)">+</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Scoreboard -->
-                <div class="scoreboard">
-                    <div>
-                        <button onclick="updateScore('home', -1)">-</button>
-                        <span class="score" id="homeScore">0</span>
-                        <button onclick="updateScore('home', 1)">+</button>
-                        <div>Home</div>
-                    </div>
-                    <div>vs</div>
-                    <div>
-                        <button onclick="updateScore('away', -1)">-</button>
-                        <span class="score" id="awayScore">0</span>
-                        <button onclick="updateScore('away', 1)">+</button>
-                        <div>Away</div>
-                    </div>
-                </div>
+              <h2>Game Information</h2>
+              <div class="game-details">
+                <label>Game Number: <input type="text" id="gameNumber"></label>
+                <label>Opponent: <input type="text" id="opponent"></label>
+              </div>
             </div>
-
-            <!-- Controls -->
+          
+            <!-- Control Buttons -->
             <div class="controls">
-                <button onclick="downloadBothFiles()">Download Files</button>
-                <button onclick="showResetConfirmation()">Reset Board</button>
-                <button onclick="resetScores()">Reset Scores</button>
+              <button onclick="downloadBothFiles()">Download Files</button>
+              <button onclick="showResetConfirmation()">Reset Board</button>
+              <button onclick="resetScores()">Reset Scores</button>
             </div>
-
+          
+            <!-- Set Number Section -->
+            <div class="set-control">
+              <span>Set Number:</span>
+              <button onclick="updateSetNumber(-1)">-</button>
+              <span class="set-number" id="setNumber">1</span>
+              <button onclick="updateSetNumber(1)">+</button>
+            </div>
+          
+            <!-- Scoreboard -->
+            <div class="scoreboard">
+              <div class="home-score">
+                <!-- Home label on the left -->
+                <div class="score-label left">Home</div>
+                <div class="score-controls">
+                  <button onclick="updateScore('home', -1)">-</button>
+                  <span class="score" id="homeScore">0</span>
+                  <button onclick="updateScore('home', 1)">+</button>
+                </div>
+              </div>
+              <div class="vs">vs</div>
+              <div class="away-score">
+                <div class="score-controls">
+                  <button onclick="updateScore('away', -1)">-</button>
+                  <span class="score" id="awayScore">0</span>
+                  <button onclick="updateScore('away', 1)">+</button>
+                </div>
+                <!-- Away label on the right -->
+                <div class="score-label right">Away</div>
+              </div>
+            </div>
+          
             <!-- Players Container -->
             <div class="players" id="playersContainer"></div>
-        </div>
+          </div>
 
         <!-- Stats View -->
         <div id="statsView" class="tab-content">

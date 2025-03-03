@@ -7,6 +7,13 @@
     --team: #F0E68C;
 }
 
+/* === General Styles === */
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+}
+
+/* === Password Overlay === */
 #authOverlay {
     position: fixed;
     top: 0;
@@ -21,6 +28,14 @@
     color: white;
 }
 
+/* Align password input and button horizontally */
+.password-input {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* === Modal === */
 .modal {
     display: none;
     position: fixed;
@@ -34,27 +49,89 @@
     z-index: 1001;
 }
 
-body {
-    font-family: Arial, sans-serif;
-    margin: 20px;
+/* === Game Information === */
+.game-info,
+.controls,
+.set-control,
+.scoreboard {
+    margin-bottom: 15px;
 }
 
-.game-info {
+/* Display game number and opponent fields side by side */
+.game-details {
     display: flex;
-    gap: 1rem;
-    margin-bottom: 1rem;
+    gap: 20px;
     flex-wrap: wrap;
 }
 
-/* Scoreboard and set-control now explicitly use row layout */
-.scoreboard,
+/* === Control Buttons === */
+.controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+button {
+    padding: 6px 12px;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* === Set Number Control === */
 .set-control {
     display: flex;
-    flex-direction: row;
-    gap: 1rem;
+    align-items: center;
+    gap: 10px;
+    justify-content: center;
+}
+
+/* === Scoreboard === */
+.scoreboard {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+}
+
+/* Home score block: label on the left and controls on the right */
+.home-score {
+    display: flex;
     align-items: center;
 }
 
+.home-score .score-label.left {
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+/* Away score block: controls first, then label on the right */
+.away-score {
+    display: flex;
+    align-items: center;
+}
+
+.away-score .score-label.right {
+    font-weight: bold;
+    margin-left: 10px;
+}
+
+/* Score controls for both teams */
+.score-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Styling for the VS text */
+.vs {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+/* Score numbers */
 .score,
 .set-number {
     font-size: 2rem;
@@ -63,12 +140,14 @@ body {
     text-align: center;
 }
 
+/* === Players Section === */
 .players {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 0.75rem;
 }
 
+/* Large player boxes with black border and consistent spacing */
 .player {
     padding: 1rem;
     border-radius: 8px;
@@ -95,51 +174,7 @@ body {
     text-align: center;
 }
 
-/* Center text in all buttons */
-button {
-    padding: 6px 12px;
-    font-size: 1rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* Position colors */
-.liberos {
-    background: var(--liberos);
-}
-
-.middles {
-    background: var(--middles);
-}
-
-.rightSides {
-    background: var(--right-sides);
-}
-
-.outsides {
-    background: var(--outsides);
-}
-
-.setters {
-    background: var(--setters);
-}
-
-.controls {
-    margin: 10px 0;
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-input[type="text"] {
-    padding: 5px;
-    margin: 5px 0;
-    width: 150px;
-}
-
-/* Tabs should be displayed horizontally */
+/* === Tabs (Input & Stats View) === */
 .tabs {
     display: flex;
     gap: 10px;
@@ -167,6 +202,7 @@ input[type="text"] {
     display: block;
 }
 
+/* === Stats Table === */
 table {
     width: 100%;
     border-collapse: collapse;
@@ -184,6 +220,7 @@ th {
     background-color: #f2f2f2;
 }
 
+/* Highlight highest value */
 .max-value {
     background-color: #90EE90 !important;
 }
@@ -193,6 +230,7 @@ th {
     padding: 5px;
 }
 
+/* Styling for View PDF button */
 #statsView button {
     background-color: #4CAF50;
     color: white;
@@ -207,10 +245,33 @@ th {
     background-color: #45a049;
 }
 
+/* === Position Colors === */
+.liberos {
+    background: var(--liberos);
+}
+
+.middles {
+    background: var(--middles);
+}
+
+.rightSides {
+    background: var(--right-sides);
+}
+
+.outsides {
+    background: var(--outsides);
+}
+
+.setters {
+    background: var(--setters);
+}
+
+/* === Responsive Adjustments === */
 @media (max-width: 768px) {
     .game-info {
         flex-direction: column;
     }
+
     .players {
         grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     }
@@ -222,17 +283,12 @@ th {
         flex-direction: column;
         gap: 0.5rem;
     }
+
     .stat {
         grid-template-columns: minmax(100px, 150px) 40px auto 40px;
     }
+
     .controls {
         flex-direction: column;
     }
-}
-
-.scoreboard > div {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 5px;
 }
