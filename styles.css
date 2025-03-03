@@ -1,7 +1,7 @@
 :root {
     --liberos: #FFB6C1;
     --middles: #98FB98;
-    --right-sides: #98FB98;
+    --right-sides: #ADD8E6;
     --outsides: #DDA0DD;
     --setters: #FFD700;
     --team: #F0E68C;
@@ -41,14 +41,16 @@ body {
 
 .game-info {
     display: flex;
-    gap: 2rem;
-    margin-bottom: 2rem;
+    gap: 1rem;
+    margin-bottom: 1rem;
     flex-wrap: wrap;
 }
 
+/* Scoreboard and set-control now explicitly use row layout */
 .scoreboard,
 .set-control {
     display: flex;
+    flex-direction: row;
     gap: 1rem;
     align-items: center;
 }
@@ -63,47 +65,47 @@ body {
 
 .players {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 0.75rem;
 }
 
 .player {
     padding: 1rem;
     border-radius: 8px;
     margin-bottom: 1rem;
+    border: 1px solid #000;
 }
 
-/* Make Team Stats look like a player box */
-.player.team-stats {
-    background: var(--team);
+.player h2 {
+    margin-bottom: 0.5rem;
 }
 
+/* Stat row styling for proper button and value alignment */
 .stat {
+    display: grid;
+    grid-template-columns: minmax(100px, 150px) 40px auto 40px;
+    align-items: center;
+    gap: 5px;
+    margin: 5px 0;
+}
+
+/* Center the stat number cell between the buttons */
+.stat span:nth-child(3) {
+    justify-self: center;
+    text-align: center;
+}
+
+/* Center text in all buttons */
+button {
+    padding: 6px 12px;
+    font-size: 1rem;
+    cursor: pointer;
     display: flex;
     align-items: center;
-    margin: 5px 0;
-    gap: 5px;
+    justify-content: center;
 }
 
-.stat span:first-child {
-    min-width: 100px;
-    display: inline-block;
-    flex-shrink: 0;
-}
-
-button {
-    margin: 0 2px;
-    padding: 8px 16px;
-    cursor: pointer;
-    flex-shrink: 0;
-    font-size: 1.1rem;
-}
-
-h2 {
-    margin-top: 0;
-    font-size: 1.2rem;
-}
-
+/* Position colors */
 .liberos {
     background: var(--liberos);
 }
@@ -112,7 +114,7 @@ h2 {
     background: var(--middles);
 }
 
-.right-sides {
+.rightSides {
     background: var(--right-sides);
 }
 
@@ -125,9 +127,10 @@ h2 {
 }
 
 .controls {
-    margin: 20px 0;
+    margin: 10px 0;
     display: flex;
     gap: 10px;
+    flex-wrap: wrap;
 }
 
 input[type="text"] {
@@ -136,7 +139,10 @@ input[type="text"] {
     width: 150px;
 }
 
+/* Tabs should be displayed horizontally */
 .tabs {
+    display: flex;
+    gap: 10px;
     margin-bottom: 20px;
 }
 
@@ -187,7 +193,6 @@ th {
     padding: 5px;
 }
 
-/* Additional styles for PDF button */
 #statsView button {
     background-color: #4CAF50;
     color: white;
@@ -202,7 +207,6 @@ th {
     background-color: #45a049;
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
     .game-info {
         flex-direction: column;
@@ -219,11 +223,7 @@ th {
         gap: 0.5rem;
     }
     .stat {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    .stat span:first-child {
-        min-width: auto;
+        grid-template-columns: minmax(100px, 150px) 40px auto 40px;
     }
     .controls {
         flex-direction: column;

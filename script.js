@@ -1,40 +1,68 @@
-const PASSWORD = "volley123";
+// Configuration defaults
+let PASSWORD_HASH = "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"; // SHA-256 of "volley123"
+let positions = {
+    liberos: {
+        count: 2,
+        stats: ['Aces', '+Pass', '-Pass', '+Serve Rec', '-Serve Rec'],
+        names: ["l1", "l2"]
+    },
+    middles: {
+        count: 2,
+        stats: ['Aces', 'Kills', 'Blocks', 'Attack Errors'],
+        names: ["m1", "m2"]
+    },
+    rightSides: {
+        count: 2,
+        stats: ['Aces', 'Kills', 'Blocks', 'Attack Errors', '+Serve Rec', '-Serve Rec'],
+        names: ["rs1", "rs2"]
+    },
+    outsides: {
+        count: 5,
+        stats: ['Aces', 'Kills', 'Blocks', 'Attack Errors', '+Serve Rec', '-Serve Rec'],
+        names: ["o1", "o2", "o3", "o4", "o5"]
+    },
+    setters: {
+        count: 2,
+        stats: ['Aces', 'Set:Hit', 'Set:Free-Ball', 'Set:Blocked'],
+        names: ["s1", "s2"]
+    }
+};
+
+// Global variables
 const dataStream = [];
 let scores = { home: 0, away: 0 };
 let currentSet = 1;
 let allSetsData = {};
+const teamStatCategories = ['Aced', 'Missed Serves', 'No-Touch Point', 'Technical Error'];
 
-const positions = {
-    liberos: {
-        count: 2,
-        stats: ['Aces','+Pass', '-Pass', '+Serve Rec','-Serve Rec'],
-        names: ["Darby", "Emma"]
-    },
-    middles: {
-        count: 2,
-        stats: ['Aces', 'Kills','Blocks', 'Attack Rrrors'],
-        names: ["Alicia", "Melia"]
-    },
-    rightSides: {
-        count: 2,
-        stats: ['Aces','Kills', 'Blocks', 'Attack Errors', '+Serve Rec','-Serve Rec'],
-        names: ["Julie", "Olivia"]
-    },
-    outsides: {
-        count: 5,
-        stats: ['Aces','Kills', 'Blocks', 'Attack Errors', '+Serve Rec','-Serve Rec'],
-        names: ["Gabi", "Hannah","Lilianna", "Riley", "Shirley"]
-    },
-    setters: {
-        count: 2,
-        stats: ['Aces','Set:Hit','Set:Free-Ball','Set:Blocked'],
-        names: ["Laila", "Naila"]
+// Initialize after DOM loads
+document.addEventListener('DOMContentLoaded', () => {
+    // Expose functions to global scope
+    window.checkPassword = checkPassword;
+    window.updateSetNumber = updateSetNumber;
+    window.showTab = showTab;
+    window.updateScore = updateScore;
+    window.confirmReset = confirmReset;
+    window.downloadBothFiles = downloadBothFiles;
+    window.viewPDF = viewPDF;
+    window.showResetConfirmation = showResetConfirmation;
+    window.resetScores = resetScores;
+    window.updateStat = updateStat;
+
+    // Initialize UI if authenticated
+    if (sessionStorage.getItem('authenticated') === 'true') {
+        document.getElementById('authOverlay').style.display = 'none';
+        document.getElementById('mainContent').style.display = 'block';
+        initializePlayers();
+        generateStatsTable();
     }
-};
+});
 
+// Password check with hashing
 function checkPassword() {
     const input = document.getElementById('passwordInput').value;
-    if(input === PASSWORD) {
+    if (input === PASSWORD) {
+        sessionStorage.setItem('authenticated', 'true');
         document.getElementById('authOverlay').style.display = 'none';
         document.getElementById('mainContent').style.display = 'block';
         initializePlayers();
@@ -43,6 +71,7 @@ function checkPassword() {
         document.getElementById('passwordError').style.display = 'block';
     }
 }
+
 
 function showTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(tab => {
@@ -65,25 +94,22 @@ function updateScore(team, change) {
 function updateSetNumber(change) {
     const newSet = Math.max(currentSet + change, 1);
     if(newSet !== currentSet) {
-        // Log the set change action in the datastream
         dataStream.push({
             timestamp: new Date().toISOString(),
             type: 'set_change',
             change: change,
             newSet: newSet
         });
-        // Save current set data
         allSetsData[currentSet] = {
-            scores: {...scores},
+            scores: { ...scores },
             dataStream: [...dataStream]
         };
 
         currentSet = newSet;
         document.getElementById('setNumber').textContent = currentSet;
         
-        // Load new set data if available, else reset scores and datastream
         if(allSetsData[currentSet]) {
-            scores = {...allSetsData[currentSet].scores};
+            scores = { ...allSetsData[currentSet].scores };
             dataStream.length = 0;
             dataStream.push(...allSetsData[currentSet].dataStream);
         } else {
@@ -155,7 +181,7 @@ function generateStatsTable() {
     });
 
     // Process team stats
-    ['Aced', 'Missed Serves', 'No-Touch Point', 'Technical Error'].forEach(stat => {
+    teamStatCategories.forEach(stat => {
         const events = statsData.filter(e => e.player === 'team' && e.stat === stat);
         teamStats[stat] = events.length ? events[events.length - 1].newValue : 0;
         allStats.add(stat);
@@ -174,16 +200,14 @@ function generateStatsTable() {
     Array.from(allStats).sort().forEach(stat => {
         const values = players.map(p => Number(p.stats[stat]) || 0);
         const maxValue = Math.max(...values);
-
-        // ✅ Team column should sum all player stats **and** dedicated team stats
         const teamTotal = values.reduce((sum, v) => sum + v, 0) + (teamStats[stat] || 0);
 
         html += `<tr>
             <td>${stat}</td>
-            <td>${teamTotal}</td>  <!-- ✅ Now correctly summing all stats -->
+            <td>${teamTotal !== 0 ? teamTotal : ''}</td>
             ${players.map(p => {
                 const value = Number(p.stats[stat]) || 0;
-                return `<td class="${value === maxValue && maxValue > 0 ? 'max-value' : ''}">${value}</td>`;
+                return `<td class="${value === maxValue && value > 0 ? 'max-value' : ''}">${value !== 0 ? value : ''}</td>`;
             }).join('')}
         </tr>`;
     });
@@ -192,16 +216,13 @@ function generateStatsTable() {
     document.getElementById('statsTable').innerHTML = html;
 }
 
-
-
-function generatePDF() {
+/* ===== PDF Generation ===== */
+function buildPDF() {
     const { jsPDF } = window.jspdf;
-    // Create the document in landscape mode.
     const doc = new jsPDF({ orientation: 'landscape' });
     const gameNumber = document.getElementById('gameNumber').value || 'unknown';
     const opponent = document.getElementById('opponent').value || 'unknown';
   
-    // Get current date and hour for filename (format: YYYYMMDD-HH)
     const now = new Date();
     const year = now.getFullYear();
     const month = (now.getMonth() + 1).toString().padStart(2, '0');
@@ -235,12 +256,10 @@ function generatePDF() {
     });
   
     // Detailed Stats
-    // processTable computes the team column as the sum of all player stat values.
     const processTable = (setData, setName) => {
         const playersData = {};
         const teamStats = {};
     
-        // Process all events, including team stats
         setData.forEach(entry => {
             if (entry.player === 'team') {
                 if (!teamStats[entry.stat]) teamStats[entry.stat] = 0;
@@ -254,7 +273,6 @@ function generatePDF() {
         const allStatsSet = new Set([...Object.keys(teamStats), ...Object.keys(playersData).flatMap(p => Object.keys(playersData[p]))]);
         const statsList = Array.from(allStatsSet).sort();
     
-        // Build player list (in order)
         let playerOrder = [];
         Object.entries(positions).forEach(([pos, config]) => {
             for (let i = 1; i <= config.count; i++) {
@@ -267,25 +285,22 @@ function generatePDF() {
     
         const headerRow = ['Stat', 'Team', ...playerOrder.map(p => p.name)];
     
-        // Calculate max values for each stat **excluding team column**
         const maxValues = {};
         statsList.forEach(stat => {
             const playerValues = playerOrder.map(player => Number(playersData[player.id]?.[stat]) || 0);
-            maxValues[stat] = Math.max(...playerValues); // Find highest player value
+            maxValues[stat] = Math.max(...playerValues);
         });
     
-        // Build table rows
         const tableRows = statsList.map(stat => {
             const playerValues = playerOrder.map(player => Number(playersData[player.id]?.[stat]) || 0);
             const teamTotal = playerValues.reduce((sum, v) => sum + v, 0) + (teamStats[stat] || 0);
     
-            // ✅ Highlight highest player values (excluding team column)
             const row = [
                 stat,
-                { content: teamTotal, styles: {} }, // No highlight for Team column
+                { content: teamTotal !== 0 ? teamTotal : '', styles: {} },
                 ...playerValues.map(value => ({
-                    content: value,
-                    styles: value === maxValues[stat] && value > 0 ? { fillColor: [144, 238, 144] } : {} // Green highlight
+                    content: value !== 0 ? value : '',
+                    styles: value === maxValues[stat] && value > 0 ? { fillColor: [144, 238, 144] } : {}
                 }))
             ];
     
@@ -307,11 +322,6 @@ function generatePDF() {
         });
     };
     
-    
-    
-    
-  
-    // Process all sets.
     Object.entries(allSetsData).forEach(([set, data]) => {
       processTable(data.dataStream, `Set ${set}`);
     });
@@ -319,29 +329,26 @@ function generatePDF() {
       processTable(dataStream, `Set ${currentSet} (Current)`);
     }
   
-    doc.save(`volleyball-stats-G${gameNumber}-vs${opponent.replace(/ /g, '-')}-${formattedDateTime}.pdf`);
-  }
-  
-function getGameMetadata() {
-    return {
-        gameNumber: document.getElementById('gameNumber').value || 'unknown',
-        opponent: document.getElementById('opponent').value || 'unknown'
-    };
+    return { doc, filename: `volleyball-stats-G${gameNumber}-vs${opponent.replace(/ /g, '-')
+      }-${formattedDateTime}.pdf` };
 }
 
-function getTotalHomePoints() {
-    return Object.values(allSetsData).reduce((acc, set) => acc + set.scores.home, 0) + scores.home;
+function downloadPDFFile() {
+    const { doc, filename } = buildPDF();
+    const blob = doc.output("blob");
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
 }
 
-function getTotalAwayPoints() {
-    return Object.values(allSetsData).reduce((acc, set) => acc + set.scores.away, 0) + scores.away;
-}
-
-function saveData() {
+function downloadJSONFile() {
     const gameNumber = document.getElementById('gameNumber').value || 'unknown';
     const opponent = document.getElementById('opponent').value || 'unknown';
     
-    // Get current date and hour for filename (format: YYYYMMDD-HH)
     const now = new Date();
     const year = now.getFullYear();
     const month = (now.getMonth() + 1).toString().padStart(2, '0');
@@ -353,8 +360,9 @@ function saveData() {
     if (!allSetsData[currentSet]) {
         allDataStreams.push(...dataStream);
     }
-
-    const filename = `volleyball-stats-G${gameNumber}-vs${opponent.replace(/ /g,'-')}-${formattedDateTime}.json`;
+    
+    const filename = `volleyball-stats-G${gameNumber}-vs${opponent.replace(/ /g, '-')
+      }-${formattedDateTime}.json`;
     
     const dataStr = JSON.stringify({
         metadata: {
@@ -367,36 +375,27 @@ function saveData() {
     }, null, 2);
     
     const blob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
 }
 
-function resetBoard() {
-    scores = { home: 0, away: 0 };
-    currentSet = 1;
-    document.getElementById('homeScore').textContent = '0';
-    document.getElementById('awayScore').textContent = '0';
-    document.getElementById('setNumber').textContent = '1';
-    document.querySelectorAll('.stat span:nth-child(3)').forEach(span => {
-        span.textContent = '0';
-    });
-    dataStream.length = 0;
-    allSetsData = {};
-    updateSetSelector();
-    generateStatsTable();
+function downloadBothFiles() {
+    downloadJSONFile();
+    downloadPDFFile();
 }
 
-function resetScores() {
-    scores = { home: 0, away: 0 };
-    document.getElementById('homeScore').textContent = '0';
-    document.getElementById('awayScore').textContent = '0';
-    logScoreReset();
+function viewPDF() {
+    const { doc } = buildPDF();
+    const dataUri = doc.output("datauristring");
+    window.open(dataUri, '_blank');
 }
 
+/* ===== Other functions ===== */
 function logScoreChange(team, change) {
     dataStream.push({
         timestamp: new Date().toISOString(),
@@ -428,11 +427,13 @@ function initializePlayers() {
     const container = document.getElementById('playersContainer');
     container.innerHTML = '';
     
+    // Create player boxes for each position
     Object.entries(positions).forEach(([pos, config]) => {
         for(let i = 1; i <= config.count; i++) {
             const playerId = `${pos}-${i}`;
             const playerName = config.names[i - 1];
             const section = document.createElement('div');
+            // Each player box gets the "player" class (with border and consistent spacing)
             section.className = `player ${pos}`;
             section.innerHTML = `<h2>${playerName}</h2>`;
             config.stats.forEach(stat => {
@@ -442,34 +443,19 @@ function initializePlayers() {
         }
     });
     
-    // Append Team Stats panel as a player box
+    // Create Team Stats panel as a regular player box.
     const teamDiv = document.createElement('div');
-    teamDiv.className = 'player team-stats';
-    teamDiv.innerHTML = `<h2>Team Stats</h2>
-        <div class="stat">
-    <span>Aced:</span>
-    <button onclick="updateStat('team', 'Aced', -1)">-</button>
-    <span id="team-Aced">0</span>
-    <button onclick="updateStat('team', 'Aced', 1)">+</button>
-</div>
-<div class="stat">
-    <span>Missed Serves:</span>
-    <button onclick="updateStat('team', 'Missed Serves', -1)">-</button>
-    <span id="team-Missed Serves">0</span>
-    <button onclick="updateStat('team', 'Missed Serves', 1)">+</button>
-</div>
-<div class="stat">
-    <span>No-Touch Point:</span>
-    <button onclick="updateStat('team', 'No-Touch Point', -1)">-</button>
-    <span id="team-No-Touch Point">0</span>
-    <button onclick="updateStat('team', 'No-Touch Point', 1)">+</button>
-</div>
-<div class="stat">
-    <span>Technical Error:</span>
-    <button onclick="updateStat('team', 'Technical Error', -1)">-</button>
-    <span id="team-Technical Error">0</span>
-    <button onclick="updateStat('team', 'Technical Error', 1)">+</button>
-</div>`;
+    teamDiv.className = 'player';
+    let teamHtml = `<h2>Team Stats</h2>`;
+    teamStatCategories.forEach(stat => {
+       teamHtml += `<div class="stat">
+           <span>${stat}:</span>
+           <button onclick="updateStat('team', '${stat}', -1)">-</button>
+           <span id="team-${stat}">0</span>
+           <button onclick="updateStat('team', '${stat}', 1)">+</button>
+       </div>`;
+    });
+    teamDiv.innerHTML = teamHtml;
     container.appendChild(teamDiv);
 }
 
@@ -490,7 +476,6 @@ function updateStat(playerId, statName, change) {
     const newValue = Math.max(parseInt(element.textContent) + change, 0);
     element.textContent = newValue;
 
-    // Ensure that team stats are properly logged in the dataStream
     dataStream.push({
         timestamp: new Date().toISOString(),
         player: playerId,
@@ -499,5 +484,27 @@ function updateStat(playerId, statName, change) {
         newValue: newValue
     });
 
-    generateStatsTable(); // Refresh the table with updated values
+    generateStatsTable();
+}
+
+function resetBoard() {
+    scores = { home: 0, away: 0 };
+    currentSet = 1;
+    document.getElementById('homeScore').textContent = '0';
+    document.getElementById('awayScore').textContent = '0';
+    document.getElementById('setNumber').textContent = '1';
+    document.querySelectorAll('.stat span:nth-child(3)').forEach(span => {
+        span.textContent = '0';
+    });
+    dataStream.length = 0;
+    allSetsData = {};
+    updateSetSelector();
+    generateStatsTable();
+}
+
+function resetScores() {
+    scores = { home: 0, away: 0 };
+    document.getElementById('homeScore').textContent = '0';
+    document.getElementById('awayScore').textContent = '0';
+    logScoreReset();
 }

@@ -1,16 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Volleyball Stat Sheet</title>
-        <link rel="stylesheet" href="styles.css">
-        <!-- jsPDF and AutoTable for PDF generation -->
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-        <!-- Defer loading of script.js to ensure DOM is ready -->
-        <script src="script.js" defer></script>
-    </head>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Volleyball Stat Sheet</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- jsPDF and AutoTable -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <!-- Load configuration before script -->
+    <script src="config.js"></script>
+    <script src="script.js"></script>
+</head>
 <body>
     <!-- Password Overlay -->
     <div id="authOverlay">
@@ -75,18 +76,18 @@
 
             <!-- Controls -->
             <div class="controls">
-                <button onclick="saveData()">Save Data</button>
+                <button onclick="downloadBothFiles()">Download Files</button>
                 <button onclick="showResetConfirmation()">Reset Board</button>
                 <button onclick="resetScores()">Reset Scores</button>
             </div>
 
-            <!-- Players Container (including the Team Stats panel appended dynamically) -->
+            <!-- Players Container -->
             <div class="players" id="playersContainer"></div>
         </div>
 
         <!-- Stats View -->
         <div id="statsView" class="tab-content">
-            <button onclick="generatePDF()">Save All to PDF</button>
+            <button onclick="viewPDF()">View PDF</button>
             <select class="set-selector" id="setSelector" onchange="generateStatsTable()">
                 <option value="all">All Sets</option>
             </select>
