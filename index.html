@@ -13,6 +13,7 @@
         <script src="config.js"></script>
     </head>
 <body>
+    <div id="version">Version: v2.1.2</div>
     <!-- Password Overlay -->
     <div id="authOverlay">
         <div>
@@ -53,7 +54,10 @@
           
             <!-- Control Buttons -->
             <div class="controls">
-              <button onclick="downloadBothFiles()">Download Files</button>
+                <div class="download-buttons">
+                    <button onclick="downloadPDFFile()">Download PDF</button>
+                    <button onclick="downloadJSONFile()">Download JSON</button>
+                </div>
               <button onclick="showResetConfirmation()">Reset Board</button>
               <button onclick="resetScores()">Reset Scores</button>
             </div>
