@@ -35,6 +35,9 @@ let currentSet = 1;
 let allSetsData = {};
 const teamStatCategories = ['Aced', 'Missed Serves', 'No-Touch Point', 'Technical Error'];
 
+// Add to global variables
+let setChanges = []; // Stores {x: actionNumber, setNumber: num}
+
 // Initialize after DOM loads
 document.addEventListener('DOMContentLoaded', () => {
     // Expose functions to global scope
@@ -55,6 +58,11 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('mainContent').style.display = 'block';
         initializePlayers();
         generateStatsTable();
+    }
+
+    // Initialize plot if authenticated
+    if (sessionStorage.getItem('authenticated') === 'true') {
+        initializePlot();
     }
 });
 
@@ -491,6 +499,12 @@ function updateStat(playerId, statName, change) {
         newValue: newValue
     });
 
+    // Add plot update
+    updatePlotData(statName);
+    if(plotData[statName]) {
+        updatePlot();
+    }
+
     generateStatsTable();
 }
 
@@ -514,4 +528,75 @@ function resetScores() {
     document.getElementById('homeScore').textContent = '0';
     document.getElementById('awayScore').textContent = '0';
     logScoreReset();
+}
+
+let plotData = {};
+let actionCounter = 0;
+
+function initializePlot() {
+    // Create structure for all possible stats
+    const allStats = new Set();
+    Object.values(positions).forEach(pos => pos.stats.forEach(stat => allStats.add(stat)));
+    teamStatCategories.forEach(stat => allStats.add(stat));
+
+    Array.from(allStats).forEach(stat => {
+        plotData[stat] = {
+            x: [],
+            y: [],
+            name: stat,
+            visible: true,
+            mode: 'lines+markers',
+            type: 'scatter'
+        };
+    });
+
+    // Create checkboxes
+    const plotControls = document.getElementById('plotControls');
+    plotControls.innerHTML = '<h3>Visible Stats:</h3>';
+    Object.keys(plotData).forEach(stat => {
+        plotControls.innerHTML += `
+            <label style="margin-right: 15px;">
+                <input type="checkbox" checked 
+                    onchange="togglePlotLine('${stat}')"> ${stat}
+            </label>
+        `;
+    });
+
+    updatePlot();
+}
+
+function togglePlotLine(stat) {
+    plotData[stat].visible = !plotData[stat].visible;
+    updatePlot();
+}
+
+function updatePlot() {
+    const traces = Object.values(plotData).filter(trace => trace.visible);
+    
+    const layout = {
+        title: 'Real-Time Stat Tracking',
+        xaxis: { title: 'Action Number' },
+        yaxis: { title: 'Cumulative Value' },
+        showlegend: true,
+        margin: { t: 40, b: 80, l: 60, r: 20 },
+        hovermode: 'closest'
+    };
+
+    Plotly.newPlot('livePlot', traces, layout, {responsive: true});
+}
+
+function updatePlotData(stat) {
+    actionCounter++;
+    const currentValue = dataStream
+        .filter(e => e.stat === stat)
+        .reduce((sum, e) => sum + e.change, 0);
+    
+    plotData[stat].x.push(actionCounter);
+    plotData[stat].y.push(currentValue);
+
+    // Keep only last 100 points for performance
+    if(plotData[stat].x.length > 100) {
+        plotData[stat].x.shift();
+        plotData[stat].y.shift();
+    }
 }

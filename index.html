@@ -11,9 +11,10 @@
         <!-- Load the default functionality first, then override with config.js -->
         <script src="script.js"></script>
         <script src="config.js"></script>
+        <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
     </head>
 <body>
-    <div id="version">Version: v2.1.7</div>
+    <div id="version">Version: v2.1.9</div>
     <!-- Password Overlay -->
     <div id="authOverlay">
         <div>
@@ -39,6 +40,7 @@
         <div class="tabs">
             <button class="tab-button active" onclick="showTab('inputView')">Input</button>
             <button class="tab-button" onclick="showTab('statsView')">Stats View</button>
+            <button class="tab-button" onclick="showTab('plotView')">Plot View</button>
         </div>
 
         <!-- Input View -->
@@ -109,6 +111,14 @@
             </select>
             <div id="statsTable"></div>
         </div>
+
+        <!-- New Plot View content -->
+        <div id="plotView" class="tab-content">
+            <div id="plotControls"></div>
+            <div id="livePlot" style="width: 100%; height: 600px;"></div>
+        </div>
+        
+    </div>
     </div>
 </body>
 </html>
