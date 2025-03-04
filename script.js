@@ -336,24 +336,17 @@ function buildPDF() {
 function downloadPDFFile() {
     const { doc, filename } = buildPDF();
     const blob = doc.output("blob");
-    const url = URL.createObjectURL(blob);
-
-    // Detect iOS (iPhone/iPad)
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-
-    if (isIOS) {
-        // On iOS, open in a new tab instead of forcing a download
-        window.open(url, '_blank');
-    } else {
-        // For other browsers, download as usual
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-    }
+    // Create a new blob with a generic MIME type to force download
+    const octetBlob = new Blob([blob], { type: "application/octet-stream" });
+    const url = URL.createObjectURL(octetBlob);
+    
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
 }
 
 function downloadJSONFile() {
