@@ -515,16 +515,3 @@ function resetScores() {
     document.getElementById('awayScore').textContent = '0';
     logScoreReset();
 }
-
-document.addEventListener('DOMContentLoaded', function() {
-    let lastTouchTime = 0;
-    document.querySelectorAll('button').forEach(function(button) {
-      button.addEventListener('touchend', function(e) {
-        const now = Date.now();
-        if (now - lastTouchTime < 300) {
-          e.preventDefault();
-        }
-        lastTouchTime = now;
-      });
-    });
-  });
