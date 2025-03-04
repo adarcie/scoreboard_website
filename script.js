@@ -336,13 +336,24 @@ function buildPDF() {
 function downloadPDFFile() {
     const { doc, filename } = buildPDF();
     const blob = doc.output("blob");
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(link.href);
+    const url = URL.createObjectURL(blob);
+
+    // Detect iOS (iPhone/iPad)
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+    if (isIOS) {
+        // On iOS, open in a new tab instead of forcing a download
+        window.open(url, '_blank');
+    } else {
+        // For other browsers, download as usual
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
 }
 
 function downloadJSONFile() {
@@ -385,14 +396,17 @@ function downloadJSONFile() {
 }
 
 function downloadBothFiles() {
-    downloadJSONFile();
-    downloadPDFFile();
+    downloadJSONFile(); // JSON download should work fine
+    setTimeout(downloadPDFFile, 100); // Delay to prevent Safari from blocking
 }
 
 function viewPDF() {
     const { doc } = buildPDF();
-    const dataUri = doc.output("datauristring");
-    window.open(dataUri, '_blank');
+    const blob = doc.output("blob");
+    const url = URL.createObjectURL(blob);
+    
+    // Open in a new tab (better for iOS Safari)
+    window.open(url, '_blank');
 }
 
 /* ===== Other functions ===== */
