@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // Password check with hashing
 function checkPassword() {
     const input = document.getElementById('passwordInput').value;
-    if (input === unscramblePassword(PASSWORD)) {
+    if (input === PASSWORD) {
         sessionStorage.setItem('authenticated', 'true');
         document.getElementById('authOverlay').style.display = 'none';
         document.getElementById('mainContent').style.display = 'block';
@@ -70,14 +70,6 @@ function checkPassword() {
     } else {
         document.getElementById('passwordError').style.display = 'block';
     }
-}
-
-function unscramblePassword(scrambled) {
-    const key = [2, 7, 1, 8, 9, 5, 3, 1, 4];
-    return scrambled
-        .split('')
-        .map((char, i) => String.fromCharCode(char.charCodeAt(0) - key[i % key.length]))
-        .join('');
 }
 
 
