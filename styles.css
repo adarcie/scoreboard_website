@@ -320,10 +320,29 @@ th {
     margin-bottom: 10px;
 }
 
-button {
-    border-radius: 8px; /* Adjust to 0px if you want square buttons */
+/*button {
+    border-radius: 8px; /* Adjust to 0px if you want square buttons 
     padding: 6px 12px;
     touch-action: manipulation;
+}*/
+
+button {
+    -webkit-appearance: none; /* Remove iOS default styling */
+    appearance: none;
+    box-sizing: border-box;   /* Ensure padding and borders are included in width/height */
+    border: 1px solid #000;   /* Force a black border */
+    border-radius: 8px;       /* Set the shape consistently (change to 0 for square buttons) */
+    padding: 6px 12px;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: manipulation;
+}
+
+button:active {
+    transform: none; /* Disable any scaling on active state */
 }
 
 .download-buttons {
