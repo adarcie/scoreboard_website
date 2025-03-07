@@ -361,3 +361,10 @@ button:active {
     gap: 20px;  /* Adjust the gap as needed */
     margin-top: 10px;
 }
+
+.plot-toggle-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}

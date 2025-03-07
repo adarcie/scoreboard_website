@@ -551,33 +551,43 @@ function updatePlotData(stat) {
 }
 
 function initializePlot() {
-    // If plotData is empty (or not loaded), initialize it; otherwise use the loaded state
-    if(!plotData || Object.keys(plotData).length === 0) {
-         const allStats = new Set();
-         Object.values(positions).forEach(pos => pos.stats.forEach(stat => allStats.add(stat)));
-         teamStatCategories.forEach(stat => allStats.add(stat));
-         plotData = {};
-         Array.from(allStats).forEach(stat => {
-              plotData[stat] = {
-                   x: [],
-                   y: [],
-                   name: stat,
-                   visible: true,
-                   mode: 'lines+markers',
-                   type: 'scatter'
-              };
-         });
+    if (!plotData || Object.keys(plotData).length === 0) {
+        const allStats = new Set();
+        Object.values(positions).forEach(pos => pos.stats.forEach(stat => allStats.add(stat)));
+        teamStatCategories.forEach(stat => allStats.add(stat));
+
+        plotData = {};
+        Array.from(allStats).forEach(stat => {
+            plotData[stat] = {
+                x: [],
+                y: [],
+                name: stat,
+                visible: true,
+                mode: 'lines+markers',
+                type: 'scatter'
+            };
+        });
     }
+
     const plotControls = document.getElementById('plotControls');
-    plotControls.innerHTML = '<h3>Visible Stats:</h3>';
+    plotControls.innerHTML = `
+        <h3>Visible Stats:</h3>
+        <div class="plot-toggle-buttons">
+            <button onclick="toggleAllPlots(true)">Select All</button>
+            <button onclick="toggleAllPlots(false)">Deselect All</button>
+        </div>
+    `;
+
     Object.keys(plotData).forEach(stat => {
-         plotControls.innerHTML += `
-            <label style="margin-right: 15px;">
-                <input type="checkbox" ${plotData[stat].visible ? 'checked' : ''} 
-                    onchange="togglePlotLine('${stat}')"> ${stat}
-            </label>
-         `;
+        const label = document.createElement('label');
+        label.style.marginRight = '15px';
+        label.innerHTML = `
+            <input type="checkbox" ${plotData[stat].visible ? 'checked' : ''} 
+                onchange="togglePlotLine('${stat}')"> ${stat}
+        `;
+        plotControls.appendChild(label);
     });
+
     updatePlot();
 }
 
@@ -597,4 +607,18 @@ function updatePlot() {
         hovermode: 'closest'
     };
     Plotly.newPlot('livePlot', traces, layout, {responsive: true});
+}
+
+function toggleAllPlots(state) {
+    Object.keys(plotData).forEach(stat => {
+        plotData[stat].visible = state;
+    });
+
+    // Update the checkboxes in the controls
+    document.querySelectorAll('#plotControls input[type="checkbox"]').forEach(checkbox => {
+        checkbox.checked = state;
+    });
+
+    updatePlot();
+    saveData();
 }
