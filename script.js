@@ -40,11 +40,16 @@ let setChanges = []; // Stores {x: actionNumber, setNumber: num}
 
 // Functions to save and load data using localStorage
 function saveData() {
+    // Capture the game number and opponent values from their input fields
+    const gameNumber = document.getElementById('gameNumber').value;
+    const opponent = document.getElementById('opponent').value;
     const data = {
         scores: scores,
         currentSet: currentSet,
         dataStream: dataStream,
-        allSetsData: allSetsData
+        allSetsData: allSetsData,
+        gameNumber: gameNumber,
+        opponent: opponent
     };
     localStorage.setItem("volleyballData", JSON.stringify(data));
 }
@@ -58,6 +63,9 @@ function loadData() {
         dataStream.length = 0;
         data.dataStream.forEach(item => dataStream.push(item));
         allSetsData = data.allSetsData;
+        // Restore game number and opponent
+        document.getElementById('gameNumber').value = data.gameNumber || "";
+        document.getElementById('opponent').value = data.opponent || "";
         updateUI();
         updateSetSelector();
         generateStatsTable();

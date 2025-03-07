@@ -14,7 +14,7 @@
         <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
     </head>
 <body>
-    <div id="version">Version: v2.1.11</div>
+    <div id="version">Version: v2.1.12</div>
     <!-- Password Overlay -->
     <div id="authOverlay">
         <div>
@@ -67,14 +67,12 @@
             <!-- Set Number and Scoreboard Container -->
             <div class="set-score-container">
                 <!-- Set Number Section -->
-                <!-- Set Number Section (Now formatted correctly) -->
-            <div class="set-control">
-                <span>Set Number:</span>
-                <button onclick="updateSetNumber(-1)">-</button>
-                <span class="set-number" id="setNumber">1</span>
-                <button onclick="updateSetNumber(1)">+</button>
-            </div>
-
+                <div class="set-control">
+                    <span>Set Number:</span>
+                    <button onclick="updateSetNumber(-1)">-</button>
+                    <span class="set-number" id="setNumber">1</span>
+                    <button onclick="updateSetNumber(1)">+</button>
+                </div>
 
                 <!-- Scoreboard -->
                 <div class="scoreboard">
@@ -98,7 +96,6 @@
                 </div>
             </div>
 
-          
             <!-- Players Container -->
             <div class="players" id="playersContainer"></div>
           </div>
@@ -112,7 +109,7 @@
             <div id="statsTable"></div>
         </div>
 
-        <!-- New Plot View content -->
+        <!-- Plot View -->
         <div id="plotView" class="tab-content">
             <div id="plotControls"></div>
             <div id="livePlot" style="width: 100%; height: 600px;"></div>
