@@ -145,21 +145,27 @@ function updateScore(team, change) {
 
 function updateSetNumber(change) {
     const newSet = Math.max(currentSet + change, 1);
-    if(newSet !== currentSet) {
+    if (newSet !== currentSet) {
         dataStream.push({
             timestamp: new Date().toISOString(),
             type: 'set_change',
             change: change,
             newSet: newSet
         });
+
+        // Save set change marker
+        setChangeMarkers.push(actionCounter);
+
         allSetsData[currentSet] = {
             scores: { ...scores },
             dataStream: [...dataStream],
             currentStats: { ...currentStats }
         };
+
         currentSet = newSet;
         document.getElementById('setNumber').textContent = currentSet;
-        if(allSetsData[currentSet]) {
+
+        if (allSetsData[currentSet]) {
             scores = { ...allSetsData[currentSet].scores };
             dataStream.length = 0;
             dataStream.push(...allSetsData[currentSet].dataStream);
@@ -169,12 +175,15 @@ function updateSetNumber(change) {
             dataStream.length = 0;
             currentStats = {};
         }
+
         updateUI();
         updateSetSelector();
         generateStatsTable();
         saveData();
+        updatePlot();
     }
 }
+
 
 function updateUI() {
     document.getElementById('homeScore').textContent = scores.home;
@@ -505,28 +514,27 @@ function updateStat(playerId, statName, change) {
 }
 
 function resetBoard() {
-    // Reset scores, set number, and stat values on the input page
     scores = { home: 0, away: 0 };
     currentSet = 1;
+    setChangeMarkers = [];  // Reset set change markers
+    scoreHistory = { x: [], home: [], away: [] };  // Reset score history
+
     document.getElementById('homeScore').textContent = '0';
     document.getElementById('awayScore').textContent = '0';
     document.getElementById('setNumber').textContent = '1';
-    document.querySelectorAll('.stat span:nth-child(3)').forEach(span => {
-        span.textContent = '0';
-    });
-    // Reset data streams and current stat values
+
     dataStream.length = 0;
     allSetsData = {};
     currentStats = {};
-    // Reset plot view data
     plotData = {};
     actionCounter = 0;
-    // Reinitialize the Plot View
+
     initializePlot();
     updateSetSelector();
     generateStatsTable();
     saveData();
 }
+
 
 function resetScores() {
     scores = { home: 0, away: 0 };
@@ -536,19 +544,37 @@ function resetScores() {
     saveData();
 }
 
+let setChangeMarkers = [];  // Stores x-axis positions of set changes
+let scoreHistory = { x: [], home: [], away: [] };  // Track score progression
+
 function updatePlotData(stat) {
     actionCounter++;
+
+    // Update stat progression
     const currentValue = dataStream
         .filter(e => e.stat === stat)
         .reduce((sum, e) => sum + e.change, 0);
+
     plotData[stat].x.push(actionCounter);
     plotData[stat].y.push(currentValue);
-    if(plotData[stat].x.length > 100) {
+
+    if (plotData[stat].x.length > 100) {
         plotData[stat].x.shift();
         plotData[stat].y.shift();
     }
+
+    // Update Home & Away scores
+    plotData["Home Score"].x.push(actionCounter);
+    plotData["Home Score"].y.push(scores.home);
+
+    plotData["Away Score"].x.push(actionCounter);
+    plotData["Away Score"].y.push(scores.away);
+
     saveData();
+    updatePlot();
 }
+
+
 
 function initializePlot() {
     if (!plotData || Object.keys(plotData).length === 0) {
@@ -567,9 +593,30 @@ function initializePlot() {
                 type: 'scatter'
             };
         });
+
+        // Add Home & Away scores to plotData
+        plotData["Home Score"] = {
+            x: [],
+            y: [],
+            name: "Home Score",
+            visible: true,
+            mode: "lines+markers",
+            type: "scatter",
+            line: { color: "blue" }
+        };
+
+        plotData["Away Score"] = {
+            x: [],
+            y: [],
+            name: "Away Score",
+            visible: true,
+            mode: "lines+markers",
+            type: "scatter",
+            line: { color: "red" }
+        };
     }
 
-    const plotControls = document.getElementById('plotControls');
+    const plotControls = document.getElementById("plotControls");
     plotControls.innerHTML = `
         <h3>Visible Stats:</h3>
         <div class="plot-toggle-buttons">
@@ -579,10 +626,10 @@ function initializePlot() {
     `;
 
     Object.keys(plotData).forEach(stat => {
-        const label = document.createElement('label');
-        label.style.marginRight = '15px';
+        const label = document.createElement("label");
+        label.style.marginRight = "15px";
         label.innerHTML = `
-            <input type="checkbox" ${plotData[stat].visible ? 'checked' : ''} 
+            <input type="checkbox" ${plotData[stat].visible ? "checked" : ""}
                 onchange="togglePlotLine('${stat}')"> ${stat}
         `;
         plotControls.appendChild(label);
@@ -591,22 +638,36 @@ function initializePlot() {
     updatePlot();
 }
 
+
 function togglePlotLine(stat) {
     plotData[stat].visible = !plotData[stat].visible;
     updatePlot();
 }
 
 function updatePlot() {
-    const traces = Object.values(plotData).filter(trace => trace.visible);
+    let traces = Object.values(plotData).filter(trace => trace.visible);
+
+    // Add vertical lines for set changes
+    setChangeMarkers.forEach(setX => {
+        traces.push({
+            x: [setX, setX],
+            y: [0, Math.max(...Object.values(plotData).flatMap(d => d.y))], 
+            mode: "lines",
+            name: "Set Change",
+            line: { color: "black", dash: "dash" }
+        });
+    });
+
     const layout = {
-        title: 'Real-Time Stat Tracking',
-        xaxis: { title: 'Action Number' },
-        yaxis: { title: 'Cumulative Value' },
+        title: "Real-Time Stat Tracking",
+        xaxis: { title: "Action Number" },
+        yaxis: { title: "Cumulative Value" },
         showlegend: true,
         margin: { t: 40, b: 80, l: 60, r: 20 },
-        hovermode: 'closest'
+        hovermode: "closest"
     };
-    Plotly.newPlot('livePlot', traces, layout, {responsive: true});
+
+    Plotly.newPlot("livePlot", traces, layout, { responsive: true });
 }
 
 function toggleAllPlots(state) {
@@ -614,7 +675,7 @@ function toggleAllPlots(state) {
         plotData[stat].visible = state;
     });
 
-    // Update the checkboxes in the controls
+    // Update checkboxes
     document.querySelectorAll('#plotControls input[type="checkbox"]').forEach(checkbox => {
         checkbox.checked = state;
     });
