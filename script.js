@@ -86,6 +86,10 @@ document.addEventListener('DOMContentLoaded', () => {
     window.resetScores = resetScores;
     window.updateStat = updateStat;
 
+    // Add event listeners to update storage when game number or opponent changes
+    document.getElementById('gameNumber').addEventListener('input', saveData);
+    document.getElementById('opponent').addEventListener('input', saveData);
+
     // Initialize UI if authenticated
     if (sessionStorage.getItem('authenticated') === 'true') {
         document.getElementById('authOverlay').style.display = 'none';
