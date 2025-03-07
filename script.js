@@ -148,23 +148,27 @@ function updateSetNumber(change) {
     if (newSet !== currentSet) {
         dataStream.push({
             timestamp: new Date().toISOString(),
-            type: 'set_change',
+            type: "set_change",
             change: change,
             newSet: newSet
         });
 
-        // Save set change marker
-        setChangeMarkers.push(actionCounter);
-
+        // Save the current set's data before resetting
         allSetsData[currentSet] = {
             scores: { ...scores },
             dataStream: [...dataStream],
             currentStats: { ...currentStats }
         };
 
-        currentSet = newSet;
-        document.getElementById('setNumber').textContent = currentSet;
+        // Reset scores and stats for the new set
+        scores = { home: 0, away: 0 };
+        currentStats = {};  // Reset all individual player stats
 
+        setChangeMarkers.push(actionCounter); // Mark set change in plot
+        currentSet = newSet;
+        document.getElementById("setNumber").textContent = currentSet;
+
+        // If we have data for this set, restore it; otherwise, start fresh
         if (allSetsData[currentSet]) {
             scores = { ...allSetsData[currentSet].scores };
             dataStream.length = 0;
@@ -185,14 +189,19 @@ function updateSetNumber(change) {
 }
 
 
+
 function updateUI() {
-    document.getElementById('homeScore').textContent = scores.home;
-    document.getElementById('awayScore').textContent = scores.away;
-    for (let key in currentStats) {
-        const elem = document.getElementById(key);
-        if (elem) { elem.textContent = currentStats[key]; }
-    }
+    // Update scores
+    document.getElementById("homeScore").textContent = scores.home;
+    document.getElementById("awayScore").textContent = scores.away;
+
+    // Update stat displays from currentStats
+    document.querySelectorAll(".stat span:nth-child(3)").forEach(span => {
+        const statId = span.id;
+        span.textContent = currentStats[statId] || 0;
+    });
 }
+
 
 function getCurrentStatValue(player, stat) {
     const key = `${player}-${stat}`;
@@ -496,44 +505,61 @@ function createStatElement(playerId, statName) {
 
 function updateStat(playerId, statName, change) {
     const key = `${playerId}-${statName}`;
-    let value = currentStats[key] || 0;
-    value = Math.max(value + change, 0);
-    currentStats[key] = value;
-    document.getElementById(key).textContent = value;
+
+    // If the stat doesn't exist yet, start at 0
+    if (!(key in currentStats)) {
+        currentStats[key] = 0;
+    }
+
+    // Update the stat value cumulatively
+    currentStats[key] += change;
+    currentStats[key] = Math.max(currentStats[key], 0); // Prevent negative values
+
+    // Update UI stat value
+    document.getElementById(key).textContent = currentStats[key];
+
+    // Log event
     dataStream.push({
         timestamp: new Date().toISOString(),
         player: playerId,
         stat: statName,
         change: change,
-        newValue: value
+        newValue: currentStats[key]
     });
+
     updatePlotData(statName);
-    if(plotData[statName]) { updatePlot(); }
-    generateStatsTable();
     saveData();
 }
 
+
+
+
 function resetBoard() {
+    // Reset scores & set tracking
     scores = { home: 0, away: 0 };
     currentSet = 1;
-    setChangeMarkers = [];  // Reset set change markers
-    scoreHistory = { x: [], home: [], away: [] };  // Reset score history
-
-    document.getElementById('homeScore').textContent = '0';
-    document.getElementById('awayScore').textContent = '0';
-    document.getElementById('setNumber').textContent = '1';
-
-    dataStream.length = 0;
-    allSetsData = {};
-    currentStats = {};
-    plotData = {};
+    setChangeMarkers = [];
     actionCounter = 0;
 
+    // Reset all player stats
+    currentStats = {};
+    dataStream.length = 0;
+    allSetsData = {};
+
+    // Reset plot data
+    plotData = {};
+    plotData["Home Score"] = { x: [], y: [], name: "Home Score", visible: true, mode: "lines+markers", type: "scatter" };
+    plotData["Away Score"] = { x: [], y: [], name: "Away Score", visible: true, mode: "lines+markers", type: "scatter" };
+
+    // Update UI Immediately
+    updateUI();
     initializePlot();
     updateSetSelector();
     generateStatsTable();
     saveData();
 }
+
+
 
 
 function resetScores() {
@@ -550,29 +576,52 @@ let scoreHistory = { x: [], home: [], away: [] };  // Track score progression
 function updatePlotData(stat) {
     actionCounter++;
 
-    // Update stat progression
-    const currentValue = dataStream
-        .filter(e => e.stat === stat)
-        .reduce((sum, e) => sum + e.change, 0);
+    // Calculate total for the stat across players and team
+    let total = 0;
+    // Player stats
+    Object.keys(currentStats).forEach(key => {
+        if (key.endsWith(`-${stat}`)) {
+            total += currentStats[key];
+        }
+    });
+    // Team stats
+    if (teamStatCategories.includes(stat)) {
+        const teamKey = `team-${stat}`;
+        total += currentStats[teamKey] || 0;
+    }
+
+    if (!plotData[stat]) {
+        plotData[stat] = {
+            x: [],
+            y: [],
+            name: stat,
+            visible: true,
+            mode: "lines+markers",
+            type: "scatter"
+        };
+    }
 
     plotData[stat].x.push(actionCounter);
-    plotData[stat].y.push(currentValue);
+    plotData[stat].y.push(total);
 
+    // Trim to last 100 points
     if (plotData[stat].x.length > 100) {
         plotData[stat].x.shift();
         plotData[stat].y.shift();
     }
 
-    // Update Home & Away scores
+    // Update scores
     plotData["Home Score"].x.push(actionCounter);
     plotData["Home Score"].y.push(scores.home);
-
     plotData["Away Score"].x.push(actionCounter);
     plotData["Away Score"].y.push(scores.away);
 
     saveData();
     updatePlot();
 }
+
+
+
 
 
 
