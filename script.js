@@ -600,3 +600,8 @@ function updatePlotData(stat) {
         plotData[stat].y.shift();
     }
 }
+
+window.addEventListener('beforeunload', (event) => {
+    event.preventDefault();
+    event.returnValue = 'Are you sure you want to leave? Your changes may not be saved.';
+});
