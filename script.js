@@ -38,6 +38,32 @@ const teamStatCategories = ['Aced', 'Missed Serves', 'No-Touch Point', 'Technica
 // Add to global variables
 let setChanges = []; // Stores {x: actionNumber, setNumber: num}
 
+// Functions to save and load data using localStorage
+function saveData() {
+    const data = {
+        scores: scores,
+        currentSet: currentSet,
+        dataStream: dataStream,
+        allSetsData: allSetsData
+    };
+    localStorage.setItem("volleyballData", JSON.stringify(data));
+}
+
+function loadData() {
+    const storedData = localStorage.getItem("volleyballData");
+    if (storedData) {
+        const data = JSON.parse(storedData);
+        scores = data.scores;
+        currentSet = data.currentSet;
+        dataStream.length = 0;
+        data.dataStream.forEach(item => dataStream.push(item));
+        allSetsData = data.allSetsData;
+        updateUI();
+        updateSetSelector();
+        generateStatsTable();
+    }
+}
+
 // Initialize after DOM loads
 document.addEventListener('DOMContentLoaded', () => {
     // Expose functions to global scope
@@ -56,6 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sessionStorage.getItem('authenticated') === 'true') {
         document.getElementById('authOverlay').style.display = 'none';
         document.getElementById('mainContent').style.display = 'block';
+        loadData();
         initializePlayers();
         generateStatsTable();
     }
@@ -73,13 +100,13 @@ function checkPassword() {
         sessionStorage.setItem('authenticated', 'true');
         document.getElementById('authOverlay').style.display = 'none';
         document.getElementById('mainContent').style.display = 'block';
+        loadData();
         initializePlayers();
         generateStatsTable();
     } else {
         document.getElementById('passwordError').style.display = 'block';
     }
 }
-
 
 function showTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(tab => {
@@ -97,6 +124,7 @@ function updateScore(team, change) {
     scores[team] = Math.max(scores[team] + change, 0);
     document.getElementById(`${team}Score`).textContent = scores[team];
     logScoreChange(team, change);
+    saveData();
 }
 
 function updateSetNumber(change) {
@@ -128,6 +156,7 @@ function updateSetNumber(change) {
         updateUI();
         updateSetSelector();
         generateStatsTable();
+        saveData();
     }
 }
 
@@ -506,6 +535,7 @@ function updateStat(playerId, statName, change) {
     }
 
     generateStatsTable();
+    saveData();
 }
 
 function resetBoard() {
@@ -521,6 +551,7 @@ function resetBoard() {
     allSetsData = {};
     updateSetSelector();
     generateStatsTable();
+    saveData();
 }
 
 function resetScores() {
@@ -528,6 +559,7 @@ function resetScores() {
     document.getElementById('homeScore').textContent = '0';
     document.getElementById('awayScore').textContent = '0';
     logScoreReset();
+    saveData();
 }
 
 let plotData = {};
@@ -600,8 +632,3 @@ function updatePlotData(stat) {
         plotData[stat].y.shift();
     }
 }
-
-window.addEventListener('beforeunload', (event) => {
-    event.preventDefault();
-    event.returnValue = 'Are you sure you want to leave? Your changes may not be saved.';
-});
