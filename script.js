@@ -35,12 +35,15 @@ let currentSet = 1;
 let allSetsData = {};
 const teamStatCategories = ['Aced', 'Missed Serves', 'No-Touch Point', 'Technical Error'];
 
-// Add to global variables
-let setChanges = []; // Stores {x: actionNumber, setNumber: num}
+// Global object to store current stat values; keys are "playerId-statName"
+let currentStats = {};
 
-// Functions to save and load data using localStorage
+// Global variables for plot data persistence
+let plotData = {};  // This object holds plot info for each stat
+let actionCounter = 0;
+
+// Update saveData to also persist plotData and actionCounter
 function saveData() {
-    // Capture the game number and opponent values from their input fields
     const gameNumber = document.getElementById('gameNumber').value;
     const opponent = document.getElementById('opponent').value;
     const data = {
@@ -49,7 +52,10 @@ function saveData() {
         dataStream: dataStream,
         allSetsData: allSetsData,
         gameNumber: gameNumber,
-        opponent: opponent
+        opponent: opponent,
+        currentStats: currentStats,
+        plotData: plotData,
+        actionCounter: actionCounter
     };
     localStorage.setItem("volleyballData", JSON.stringify(data));
 }
@@ -63,18 +69,17 @@ function loadData() {
         dataStream.length = 0;
         data.dataStream.forEach(item => dataStream.push(item));
         allSetsData = data.allSetsData;
-        // Restore game number and opponent
+        currentStats = data.currentStats || {};
         document.getElementById('gameNumber').value = data.gameNumber || "";
         document.getElementById('opponent').value = data.opponent || "";
-        updateUI();
-        updateSetSelector();
-        generateStatsTable();
+        document.getElementById('setNumber').textContent = currentSet;
+        if(data.plotData) { plotData = data.plotData; }
+        if(data.actionCounter) { actionCounter = data.actionCounter; }
     }
 }
 
 // Initialize after DOM loads
 document.addEventListener('DOMContentLoaded', () => {
-    // Expose functions to global scope
     window.checkPassword = checkPassword;
     window.updateSetNumber = updateSetNumber;
     window.showTab = showTab;
@@ -86,21 +91,17 @@ document.addEventListener('DOMContentLoaded', () => {
     window.resetScores = resetScores;
     window.updateStat = updateStat;
 
-    // Add event listeners to update storage when game number or opponent changes
     document.getElementById('gameNumber').addEventListener('input', saveData);
     document.getElementById('opponent').addEventListener('input', saveData);
 
-    // Initialize UI if authenticated
     if (sessionStorage.getItem('authenticated') === 'true') {
         document.getElementById('authOverlay').style.display = 'none';
         document.getElementById('mainContent').style.display = 'block';
-        loadData();
         initializePlayers();
+        loadData();
+        updateUI();
+        updateSetSelector();
         generateStatsTable();
-    }
-
-    // Initialize plot if authenticated
-    if (sessionStorage.getItem('authenticated') === 'true') {
         initializePlot();
     }
 });
@@ -112,9 +113,12 @@ function checkPassword() {
         sessionStorage.setItem('authenticated', 'true');
         document.getElementById('authOverlay').style.display = 'none';
         document.getElementById('mainContent').style.display = 'block';
-        loadData();
         initializePlayers();
+        loadData();
+        updateUI();
+        updateSetSelector();
         generateStatsTable();
+        initializePlot();
     } else {
         document.getElementById('passwordError').style.display = 'block';
     }
@@ -150,21 +154,21 @@ function updateSetNumber(change) {
         });
         allSetsData[currentSet] = {
             scores: { ...scores },
-            dataStream: [...dataStream]
+            dataStream: [...dataStream],
+            currentStats: { ...currentStats }
         };
-
         currentSet = newSet;
         document.getElementById('setNumber').textContent = currentSet;
-        
         if(allSetsData[currentSet]) {
             scores = { ...allSetsData[currentSet].scores };
             dataStream.length = 0;
             dataStream.push(...allSetsData[currentSet].dataStream);
+            currentStats = { ...allSetsData[currentSet].currentStats };
         } else {
             scores = { home: 0, away: 0 };
             dataStream.length = 0;
+            currentStats = {};
         }
-        
         updateUI();
         updateSetSelector();
         generateStatsTable();
@@ -175,16 +179,15 @@ function updateSetNumber(change) {
 function updateUI() {
     document.getElementById('homeScore').textContent = scores.home;
     document.getElementById('awayScore').textContent = scores.away;
-    
-    document.querySelectorAll('.stat span:nth-child(3)').forEach(span => {
-        const [player, stat] = span.id.split('-');
-        span.textContent = getCurrentStatValue(player, stat);
-    });
+    for (let key in currentStats) {
+        const elem = document.getElementById(key);
+        if (elem) { elem.textContent = currentStats[key]; }
+    }
 }
 
 function getCurrentStatValue(player, stat) {
-    const events = dataStream.filter(e => e.player === player && e.stat === stat);
-    return events.length ? events[events.length - 1].newValue : 0;
+    const key = `${player}-${stat}`;
+    return currentStats[key] || 0;
 }
 
 function updateSetSelector() {
@@ -206,36 +209,28 @@ function generateStatsTable() {
     } else {
         statsData = allSetsData[selectedSet]?.dataStream || [];
     }
-
     const allStats = new Set();
     const players = [];
     const teamStats = {};
-
-    // Process player stats
     Object.entries(positions).forEach(([pos, config]) => {
         for (let i = 1; i <= config.count; i++) {
             const playerId = `${pos}-${i}`;
             const playerName = config.names[i - 1];
             const playerStats = {};
-
             config.stats.forEach(stat => {
                 const events = statsData.filter(e => e.player === playerId && e.stat === stat);
                 const value = events.length ? events[events.length - 1].newValue : 0;
                 playerStats[stat] = value;
                 allStats.add(stat);
             });
-
             players.push({ id: playerId, name: playerName, stats: playerStats });
         }
     });
-
-    // Process team stats
     teamStatCategories.forEach(stat => {
         const events = statsData.filter(e => e.player === 'team' && e.stat === stat);
         teamStats[stat] = events.length ? events[events.length - 1].newValue : 0;
         allStats.add(stat);
     });
-
     let html = `<table>
         <thead>
             <tr>
@@ -245,12 +240,10 @@ function generateStatsTable() {
             </tr>
         </thead>
         <tbody>`;
-
     Array.from(allStats).sort().forEach(stat => {
         const values = players.map(p => Number(p.stats[stat]) || 0);
         const maxValue = Math.max(...values);
         const teamTotal = values.reduce((sum, v) => sum + v, 0) + (teamStats[stat] || 0);
-
         html += `<tr>
             <td>${stat}</td>
             <td>${teamTotal !== 0 ? teamTotal : ''}</td>
@@ -260,7 +253,6 @@ function generateStatsTable() {
             }).join('')}
         </tr>`;
     });
-
     html += `</tbody></table>`;
     document.getElementById('statsTable').innerHTML = html;
 }
@@ -271,22 +263,17 @@ function buildPDF() {
     const doc = new jsPDF({ orientation: 'landscape' });
     const gameNumber = document.getElementById('gameNumber').value || 'unknown';
     const opponent = document.getElementById('opponent').value || 'unknown';
-  
     const now = new Date();
     const year = now.getFullYear();
     const month = (now.getMonth() + 1).toString().padStart(2, '0');
     const day = now.getDate().toString().padStart(2, '0');
     const hour = now.getHours().toString().padStart(2, '0');
     const formattedDateTime = `${year}${month}${day}-${hour}`;
-  
-    // Title Page
     doc.setFontSize(18);
     doc.text(`Volleyball Stats - Game ${gameNumber} vs ${opponent}`, 10, 20);
     doc.setFontSize(12);
     doc.text(`Generated: ${new Date().toLocaleString()}`, 10, 30);
     doc.addPage();
-  
-    // Set Summaries
     const summaryData = [];
     Object.keys(allSetsData).forEach(set => {
       summaryData.push([`Set ${set}`, allSetsData[set].scores.home, allSetsData[set].scores.away]);
@@ -294,7 +281,6 @@ function buildPDF() {
     if (!allSetsData[currentSet]) {
       summaryData.push([`Set ${currentSet} (Current)`, scores.home, scores.away]);
     }
-  
     doc.autoTable({
       head: [['Set', 'Home Score', 'Away Score']],
       body: summaryData,
@@ -303,12 +289,9 @@ function buildPDF() {
       styles: { fontSize: 10, cellPadding: 4 },
       headStyles: { fillColor: [41, 128, 185], textColor: 255 }
     });
-  
-    // Detailed Stats
     const processTable = (setData, setName) => {
         const playersData = {};
         const teamStats = {};
-    
         setData.forEach(entry => {
             if (entry.player === 'team') {
                 if (!teamStats[entry.stat]) teamStats[entry.stat] = 0;
@@ -318,10 +301,8 @@ function buildPDF() {
                 playersData[entry.player][entry.stat] = entry.newValue;
             }
         });
-    
         const allStatsSet = new Set([...Object.keys(teamStats), ...Object.keys(playersData).flatMap(p => Object.keys(playersData[p]))]);
         const statsList = Array.from(allStatsSet).sort();
-    
         let playerOrder = [];
         Object.entries(positions).forEach(([pos, config]) => {
             for (let i = 1; i <= config.count; i++) {
@@ -331,19 +312,15 @@ function buildPDF() {
                 }
             }
         });
-    
         const headerRow = ['Stat', 'Team', ...playerOrder.map(p => p.name)];
-    
         const maxValues = {};
         statsList.forEach(stat => {
             const playerValues = playerOrder.map(player => Number(playersData[player.id]?.[stat]) || 0);
             maxValues[stat] = Math.max(...playerValues);
         });
-    
         const tableRows = statsList.map(stat => {
             const playerValues = playerOrder.map(player => Number(playersData[player.id]?.[stat]) || 0);
             const teamTotal = playerValues.reduce((sum, v) => sum + v, 0) + (teamStats[stat] || 0);
-    
             const row = [
                 stat,
                 { content: teamTotal !== 0 ? teamTotal : '', styles: {} },
@@ -352,14 +329,11 @@ function buildPDF() {
                     styles: value === maxValues[stat] && value > 0 ? { fillColor: [144, 238, 144] } : {}
                 }))
             ];
-    
             return row;
         });
-    
         doc.addPage();
         doc.setFontSize(16);
         doc.text(`${setName} Details`, 10, 20);
-    
         doc.autoTable({
             head: [headerRow],
             body: tableRows,
@@ -370,14 +344,12 @@ function buildPDF() {
             alternateRowStyles: { fillColor: [245, 245, 245] }
         });
     };
-    
     Object.entries(allSetsData).forEach(([set, data]) => {
       processTable(data.dataStream, `Set ${set}`);
     });
     if (!allSetsData[currentSet]) {
       processTable(dataStream, `Set ${currentSet} (Current)`);
     }
-  
     return { doc, filename: `volleyball-stats-G${gameNumber}-vs${opponent.replace(/ /g, '-')
       }-${formattedDateTime}.pdf` };
 }
@@ -385,10 +357,8 @@ function buildPDF() {
 function downloadPDFFile() {
     const { doc, filename } = buildPDF();
     const blob = doc.output("blob");
-    // Create a new blob with a generic MIME type to force download
     const octetBlob = new Blob([blob], { type: "application/octet-stream" });
     const url = URL.createObjectURL(octetBlob);
-    
     const link = document.createElement("a");
     link.href = url;
     link.download = filename;
@@ -401,22 +371,18 @@ function downloadPDFFile() {
 function downloadJSONFile() {
     const gameNumber = document.getElementById('gameNumber').value || 'unknown';
     const opponent = document.getElementById('opponent').value || 'unknown';
-    
     const now = new Date();
     const year = now.getFullYear();
     const month = (now.getMonth() + 1).toString().padStart(2, '0');
     const day = now.getDate().toString().padStart(2, '0');
     const hour = now.getHours().toString().padStart(2, '0');
     const formattedDateTime = `${year}${month}${day}-${hour}`;
-    
     const allDataStreams = Object.values(allSetsData).flatMap(set => set.dataStream);
     if (!allSetsData[currentSet]) {
         allDataStreams.push(...dataStream);
     }
-    
     const filename = `volleyball-stats-G${gameNumber}-vs${opponent.replace(/ /g, '-')
       }-${formattedDateTime}.json`;
-    
     const dataStr = JSON.stringify({
         metadata: {
             gameNumber: gameNumber,
@@ -426,7 +392,6 @@ function downloadJSONFile() {
         },
         actions: allDataStreams
     }, null, 2);
-    
     const blob = new Blob([dataStr], { type: 'application/json' });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
@@ -438,16 +403,14 @@ function downloadJSONFile() {
 }
 
 function downloadBothFiles() {
-    downloadJSONFile(); // JSON download should work fine
-    setTimeout(downloadPDFFile, 100); // Delay to prevent Safari from blocking
+    downloadJSONFile();
+    setTimeout(downloadPDFFile, 100);
 }
 
 function viewPDF() {
     const { doc } = buildPDF();
     const blob = doc.output("blob");
     const url = URL.createObjectURL(blob);
-    
-    // Open in a new tab (better for iOS Safari)
     window.open(url, '_blank');
 }
 
@@ -482,14 +445,11 @@ function confirmReset(confirmed) {
 function initializePlayers() {
     const container = document.getElementById('playersContainer');
     container.innerHTML = '';
-    
-    // Create player boxes for each position
     Object.entries(positions).forEach(([pos, config]) => {
         for(let i = 1; i <= config.count; i++) {
             const playerId = `${pos}-${i}`;
             const playerName = config.names[i - 1];
             const section = document.createElement('div');
-            // Each player box gets the "player" class (with border and consistent spacing)
             section.className = `player ${pos}`;
             section.innerHTML = `<h2>${playerName}</h2>`;
             config.stats.forEach(stat => {
@@ -498,8 +458,6 @@ function initializePlayers() {
             container.appendChild(section);
         }
     });
-    
-    // Create Team Stats panel as a regular player box.
     const teamDiv = document.createElement('div');
     teamDiv.className = 'player';
     let teamHtml = `<h2>Team Stats</h2>`;
@@ -528,29 +486,26 @@ function createStatElement(playerId, statName) {
 }
 
 function updateStat(playerId, statName, change) {
-    const element = document.getElementById(`${playerId}-${statName}`);
-    const newValue = Math.max(parseInt(element.textContent) + change, 0);
-    element.textContent = newValue;
-
+    const key = `${playerId}-${statName}`;
+    let value = currentStats[key] || 0;
+    value = Math.max(value + change, 0);
+    currentStats[key] = value;
+    document.getElementById(key).textContent = value;
     dataStream.push({
         timestamp: new Date().toISOString(),
         player: playerId,
         stat: statName,
         change: change,
-        newValue: newValue
+        newValue: value
     });
-
-    // Add plot update
     updatePlotData(statName);
-    if(plotData[statName]) {
-        updatePlot();
-    }
-
+    if(plotData[statName]) { updatePlot(); }
     generateStatsTable();
     saveData();
 }
 
 function resetBoard() {
+    // Reset scores, set number, and stat values on the input page
     scores = { home: 0, away: 0 };
     currentSet = 1;
     document.getElementById('homeScore').textContent = '0';
@@ -559,8 +514,15 @@ function resetBoard() {
     document.querySelectorAll('.stat span:nth-child(3)').forEach(span => {
         span.textContent = '0';
     });
+    // Reset data streams and current stat values
     dataStream.length = 0;
     allSetsData = {};
+    currentStats = {};
+    // Reset plot view data
+    plotData = {};
+    actionCounter = 0;
+    // Reinitialize the Plot View
+    initializePlot();
     updateSetSelector();
     generateStatsTable();
     saveData();
@@ -574,38 +536,48 @@ function resetScores() {
     saveData();
 }
 
-let plotData = {};
-let actionCounter = 0;
+function updatePlotData(stat) {
+    actionCounter++;
+    const currentValue = dataStream
+        .filter(e => e.stat === stat)
+        .reduce((sum, e) => sum + e.change, 0);
+    plotData[stat].x.push(actionCounter);
+    plotData[stat].y.push(currentValue);
+    if(plotData[stat].x.length > 100) {
+        plotData[stat].x.shift();
+        plotData[stat].y.shift();
+    }
+    saveData();
+}
 
 function initializePlot() {
-    // Create structure for all possible stats
-    const allStats = new Set();
-    Object.values(positions).forEach(pos => pos.stats.forEach(stat => allStats.add(stat)));
-    teamStatCategories.forEach(stat => allStats.add(stat));
-
-    Array.from(allStats).forEach(stat => {
-        plotData[stat] = {
-            x: [],
-            y: [],
-            name: stat,
-            visible: true,
-            mode: 'lines+markers',
-            type: 'scatter'
-        };
-    });
-
-    // Create checkboxes
+    // If plotData is empty (or not loaded), initialize it; otherwise use the loaded state
+    if(!plotData || Object.keys(plotData).length === 0) {
+         const allStats = new Set();
+         Object.values(positions).forEach(pos => pos.stats.forEach(stat => allStats.add(stat)));
+         teamStatCategories.forEach(stat => allStats.add(stat));
+         plotData = {};
+         Array.from(allStats).forEach(stat => {
+              plotData[stat] = {
+                   x: [],
+                   y: [],
+                   name: stat,
+                   visible: true,
+                   mode: 'lines+markers',
+                   type: 'scatter'
+              };
+         });
+    }
     const plotControls = document.getElementById('plotControls');
     plotControls.innerHTML = '<h3>Visible Stats:</h3>';
     Object.keys(plotData).forEach(stat => {
-        plotControls.innerHTML += `
+         plotControls.innerHTML += `
             <label style="margin-right: 15px;">
-                <input type="checkbox" checked 
+                <input type="checkbox" ${plotData[stat].visible ? 'checked' : ''} 
                     onchange="togglePlotLine('${stat}')"> ${stat}
             </label>
-        `;
+         `;
     });
-
     updatePlot();
 }
 
@@ -616,7 +588,6 @@ function togglePlotLine(stat) {
 
 function updatePlot() {
     const traces = Object.values(plotData).filter(trace => trace.visible);
-    
     const layout = {
         title: 'Real-Time Stat Tracking',
         xaxis: { title: 'Action Number' },
@@ -625,22 +596,5 @@ function updatePlot() {
         margin: { t: 40, b: 80, l: 60, r: 20 },
         hovermode: 'closest'
     };
-
     Plotly.newPlot('livePlot', traces, layout, {responsive: true});
-}
-
-function updatePlotData(stat) {
-    actionCounter++;
-    const currentValue = dataStream
-        .filter(e => e.stat === stat)
-        .reduce((sum, e) => sum + e.change, 0);
-    
-    plotData[stat].x.push(actionCounter);
-    plotData[stat].y.push(currentValue);
-
-    // Keep only last 100 points for performance
-    if(plotData[stat].x.length > 100) {
-        plotData[stat].x.shift();
-        plotData[stat].y.shift();
-    }
 }

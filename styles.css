@@ -84,7 +84,7 @@ button {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 30px; /* Space between Set Number and Scoreboard */
+    gap: 30px;
 }
 
 /* Ensure Set Number is aligned properly */
@@ -96,8 +96,8 @@ button {
     font-weight: bold;
     justify-content: center;
     padding: 10px;
-    border: 2px solid black; /* Black outline */
-    border-radius: 8px; /* Optional rounded corners */
+    border: 2px solid black;
+    border-radius: 8px;
 }
 
 /* Ensure Scoreboard stays horizontally aligned */
@@ -107,8 +107,8 @@ button {
     align-items: center;
     gap: 20px;
     padding: 10px;
-    border: 2px solid black; /* Black outline */
-    border-radius: 8px; /* Optional rounded corners */
+    border: 2px solid black;
+    border-radius: 8px;
 }
 
 /* Home score block: label on the left and controls on the right */
@@ -286,7 +286,6 @@ th {
     .game-info {
         flex-direction: column;
     }
-
     .players {
         grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     }
@@ -297,17 +296,14 @@ th {
         flex-direction: column;
         align-items: center;
     }
-
     .scoreboard,
     .set-control {
         flex-direction: column;
         gap: 0.5rem;
     }
-
     .stat {
         grid-template-columns: minmax(100px, 150px) 40px auto 40px;
     }
-
     .controls {
         flex-direction: column;
     }
