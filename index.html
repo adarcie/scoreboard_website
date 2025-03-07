@@ -14,7 +14,7 @@
         <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
     </head>
 <body>
-    <div id="version">Version: v2.1.13</div>
+    <div id="version">Version: v2.1.14</div>
     <!-- Password Overlay -->
     <div id="authOverlay">
         <div>
@@ -30,8 +30,10 @@
     <!-- Reset Confirmation Modal -->
     <div class="modal" id="confirmationModal">
         <p>Are you sure you want to reset the sheet?</p>
+        <div class="modal-buttons">
         <button onclick="confirmReset(true)">Yes</button>
         <button onclick="confirmReset(false)">No</button>
+        </div>
     </div>
 
     <!-- Main Content -->

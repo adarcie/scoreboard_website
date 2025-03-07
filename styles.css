@@ -354,3 +354,10 @@ button:active {
     border-radius: 5px;
     margin-top: 10px;
 }
+
+.modal-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 20px;  /* Adjust the gap as needed */
+    margin-top: 10px;
+}
