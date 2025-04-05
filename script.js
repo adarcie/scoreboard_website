@@ -33,7 +33,7 @@ const dataStream = [];
 let scores = { home: 0, away: 0 };
 let currentSet = 1;
 let allSetsData = {};
-const teamStatCategories = ['Aced', 'Missed Serves', 'Tip:Point', 'Technical Error','Free Ball','Opp. Error'];
+const teamStatCategories = ['Aced', 'Missed Serves', 'Technical Error','Free Ball','Opp. Error', 'Opp. Tip:Point'];
 
 // Global object to store current stat values; keys are "playerId-statName"
 let currentStats = {};
