@@ -33,7 +33,7 @@ const dataStream = [];
 let scores = { home: 0, away: 0 };
 let currentSet = 1;
 let allSetsData = {};
-const teamStatCategories = ['Aced', 'Missed Serves', 'No-Touch Point', 'Technical Error'];
+const teamStatCategories = ['Aced', 'Missed Serves', 'Tip:Point', 'Technical Error','Free Ball','Opp. Error'];
 
 // Global object to store current stat values; keys are "playerId-statName"
 let currentStats = {};
@@ -626,6 +626,7 @@ function updatePlotData(stat) {
 
 
 function initializePlot() {
+    // Initialize plotData with all possible stats, even if they're not populated yet
     if (!plotData || Object.keys(plotData).length === 0) {
         const allStats = new Set();
         Object.values(positions).forEach(pos => pos.stats.forEach(stat => allStats.add(stat)));
@@ -663,8 +664,20 @@ function initializePlot() {
             type: "scatter",
             line: { color: "red" }
         };
+
+        // Add Set Change lines to plotData
+        plotData["Set Change"] = {
+            x: [],
+            y: [],
+            name: "Set Change",
+            visible: true,
+            mode: "lines",
+            type: "scatter",
+            line: { color: "black", dash: "dash" }
+        };
     }
 
+    // Create toggle controls for all stats and Set Change lines
     const plotControls = document.getElementById("plotControls");
     plotControls.innerHTML = `
         <h3>Visible Stats:</h3>
@@ -696,16 +709,18 @@ function togglePlotLine(stat) {
 function updatePlot() {
     let traces = Object.values(plotData).filter(trace => trace.visible);
 
-    // Add vertical lines for set changes
-    setChangeMarkers.forEach(setX => {
-        traces.push({
-            x: [setX, setX],
-            y: [0, Math.max(...Object.values(plotData).flatMap(d => d.y))], 
-            mode: "lines",
-            name: "Set Change",
-            line: { color: "black", dash: "dash" }
+    // Add vertical lines for set changes if "Set Change" is visible
+    if (plotData["Set Change"].visible) {
+        setChangeMarkers.forEach(setX => {
+            traces.push({
+                x: [setX, setX],
+                y: [0, Math.max(...Object.values(plotData).flatMap(d => d.y))], 
+                mode: "lines",
+                name: "Set Change",
+                line: { color: "black", dash: "dash" }
+            });
         });
-    });
+    }
 
     const layout = {
         title: "Real-Time Stat Tracking",

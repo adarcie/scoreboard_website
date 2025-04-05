@@ -7,7 +7,7 @@ positions = {
     },
     setters: {
         count: 2,
-        stats: ['Aces', 'Set:Hit', 'Set:Free-Ball', 'Set:Blocked'],
+        stats: ['Aces', 'Tip:Point', 'Blocks', 'Set:Hit', 'Set:Blocked'],
         names: ["Laila", "Naila"]
     },
     middles: {
@@ -21,7 +21,6 @@ positions = {
         stats: ['Aces', 'Kills', 'Blocks', 'Attack Errors', '+Serve Rec','-Serve Rec'],
         names: ["Julie", "Olivia"]
     },
-    
     outsides: {
         count: 5,
         stats: ['Aces', 'Kills', 'Blocks', 'Attack Errors', '+Serve Rec','-Serve Rec'],
