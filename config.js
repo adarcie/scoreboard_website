@@ -7,7 +7,7 @@ positions = {
     },
     setters: {
         count: 2,
-        stats: ['Aces', 'Tip:Point', 'Blocks', 'Set:Hit', 'Set:Blocked'],
+        stats: ['Aces', 'Set:OH', 'Set:Mid', 'Set:RS', '-Set'],
         names: ["Laila", "Naila"]
     },
     middles: {
